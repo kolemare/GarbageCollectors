@@ -37,6 +37,10 @@ private:
     void scan_roots()
     {
         std::lock_guard<std::mutex> lock(roots_mutex);
+        if (roots.empty())
+        {
+            return;
+        }
         for (T *root : roots)
         {
             mark_object(static_cast<ObjectHeader *>(static_cast<void *>(root) - sizeof(ObjectHeader)));
@@ -89,32 +93,46 @@ private:
 
     void sweep_objects(GarbageCollector<T> &gc)
     {
+        std::cout << "NNNN 1" << std::endl;
         typename GarbageCollector<T>::ObjectHeader *object = gc.object_list;
+        std::cout << "NNNN 2" << std::endl;
         typename GarbageCollector<T>::ObjectHeader *prev = nullptr;
+        std::cout << "NNNN 3" << std::endl;
 
         while (object != nullptr)
         {
+            std::cout << "NNNN 4" << std::endl;
             if (object->marked)
             {
+                std::cout << "NNNN 5" << std::endl;
                 object->marked = false;
                 prev = object;
                 object = object->next;
             }
             else
             {
+                std::cout << "NNNN 6" << std::endl;
                 if (prev == nullptr)
                 {
+                    std::cout << "NNNN 7" << std::endl;
                     gc.object_list = object->next;
                 }
                 else
                 {
+                    std::cout << "NNNN 8" << std::endl;
                     prev->next = object->next;
                 }
-
+                std::cout << "NNNN 9" << std::endl;
                 typename GarbageCollector<T>::ObjectHeader *next = object->next;
                 void *ptr = static_cast<void *>(object);
-                std::free(ptr);
+                if (ptr != nullptr)
+                {
+                    std::cout << "NNNN 10" << std::endl;
+                    std::free(ptr);
+                    std::cout << "NNNN 11" << std::endl;
+                }
                 object = next;
+                std::cout << "NNNN 12" << std::endl;
             }
         }
 
@@ -205,9 +223,13 @@ public:
 
     void collect_garbage()
     {
+        std::cout << "Ovde 1" << std::endl;
         scan_roots();
+        std::cout << "Ovde 2" << std::endl;
         scan_objects();
+        std::cout << "Ovde 3" << std::endl;
         sweep_objects(*this);
+        std::cout << "Ovde 4" << std::endl;
     }
 };
 #endif // GARBAGE_COLLECTOR_HPP
