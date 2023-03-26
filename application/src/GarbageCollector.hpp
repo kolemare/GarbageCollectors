@@ -121,7 +121,7 @@ public:
 
         for (auto ptr : garbage)
         {
-            delete ptr;
+            std::free(ptr);
             objects_.erase(ptr);
         }
         if (debug_)
