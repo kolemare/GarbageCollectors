@@ -1,235 +1,169 @@
 #ifndef GARBAGE_COLLECTOR_HPP
 #define GARBAGE_COLLECTOR_HPP
 
-#include <atomic>
-#include <cstddef>
-#include <vector>
+#include <chrono>
+#include <iostream>
+#include <memory>
 #include <mutex>
 #include <thread>
-#include <chrono>
+#include <vector>
 #include <algorithm>
-#include <iostream>
+#include <cstring>
+#include <unordered_set>
+
+class GarbageCollector;
+class GCObjectBase;
 
 template <typename T>
+class GCObject;
+
+template <typename T>
+using GCPtr = std::shared_ptr<GCObject<T>>;
+
+class GCObjectBase
+{
+public:
+    virtual ~GCObjectBase() {}
+    virtual void update_ptr(void *new_ptr) = 0;
+};
+
+template <typename T>
+class GCObject : public GCObjectBase
+{
+public:
+    GCObject(T *ptr, GarbageCollector &gc) : ptr_(ptr), gc_(gc) {}
+    GCObject(const GCObject &other) = delete;
+    GCObject &operator=(const GCObject &other) = delete;
+    ~GCObject()
+    {
+        gc_.add(this);
+    }
+    T *get() const
+    {
+        return ptr_;
+    }
+
+    void update_ptr(void *new_ptr) override
+    {
+        ptr_ = static_cast<T *>(new_ptr);
+    }
+
+private:
+    T *ptr_;
+    GarbageCollector &gc_;
+};
+
 class GarbageCollector
 {
-private:
-    struct ObjectHeader
-    {
-        std::atomic<bool> marked;
-        size_t size;
-        ObjectHeader *next;
-    };
-
-    struct MemoryBlock
-    {
-        void *memory;
-        size_t size;
-        MemoryBlock *next;
-    };
-
-    std::atomic<bool> running;
-    std::vector<T *> roots;
-    std::mutex roots_mutex;
-    MemoryBlock *memory_blocks;
-    ObjectHeader *object_list;
-
-    void scan_roots()
-    {
-        std::lock_guard<std::mutex> lock(roots_mutex);
-        if (roots.empty())
-        {
-            return;
-        }
-        for (T *root : roots)
-        {
-            mark_object(static_cast<ObjectHeader *>(static_cast<void *>(root) - sizeof(ObjectHeader)));
-        }
-    }
-
-    void scan_objects()
-    {
-        for (ObjectHeader *object = object_list; object != nullptr; object = object->next)
-        {
-            if (object->marked)
-            {
-                object->marked = false;
-            }
-            else
-            {
-                std::free(static_cast<void *>(object));
-                if (object == object_list)
-                {
-                    object_list = object->next;
-                }
-                else
-                {
-                    for (ObjectHeader *prev = object_list; prev != nullptr; prev = prev->next)
-                    {
-                        if (prev->next == object)
-                        {
-                            prev->next = object->next;
-                        }
-                        std::free(static_cast<void *>(object));
-                        object = prev->next;
-                    }
-                }
-                object = object->next;
-            }
-        }
-    }
-
-    void mark_object(ObjectHeader *object)
-    {
-        if (object && !object->marked)
-        {
-            object->marked = true;
-            for (std::size_t i = 0; i < object->size / sizeof(T); i++)
-            {
-                mark_object(reinterpret_cast<ObjectHeader *>(reinterpret_cast<T *>(object + 1) + i));
-            }
-        }
-    }
-
-    void sweep_objects(GarbageCollector<T> &gc)
-    {
-        std::cout << "NNNN 1" << std::endl;
-        typename GarbageCollector<T>::ObjectHeader *object = gc.object_list;
-        std::cout << "NNNN 2" << std::endl;
-        typename GarbageCollector<T>::ObjectHeader *prev = nullptr;
-        std::cout << "NNNN 3" << std::endl;
-
-        while (object != nullptr)
-        {
-            std::cout << "NNNN 4" << std::endl;
-            if (object->marked)
-            {
-                std::cout << "NNNN 5" << std::endl;
-                object->marked = false;
-                prev = object;
-                object = object->next;
-            }
-            else
-            {
-                std::cout << "NNNN 6" << std::endl;
-                if (prev == nullptr)
-                {
-                    std::cout << "NNNN 7" << std::endl;
-                    gc.object_list = object->next;
-                }
-                else
-                {
-                    std::cout << "NNNN 8" << std::endl;
-                    prev->next = object->next;
-                }
-                std::cout << "NNNN 9" << std::endl;
-                typename GarbageCollector<T>::ObjectHeader *next = object->next;
-                void *ptr = static_cast<void *>(object);
-                if (ptr != nullptr)
-                {
-                    std::cout << "NNNN 10" << std::endl;
-                    std::free(ptr);
-                    std::cout << "NNNN 11" << std::endl;
-                }
-                object = next;
-                std::cout << "NNNN 12" << std::endl;
-            }
-        }
-
-        GarbageCollector<T>::MemoryBlock *block = gc.memory_blocks;
-        while (block != nullptr && block->next != nullptr)
-        {
-            if (block->next->memory == nullptr)
-            {
-                block->next = block->next->next;
-            }
-            else
-            {
-                block = block->next;
-            }
-        }
-    }
-
 public:
-    GarbageCollector() : running(false), memory_blocks(nullptr), object_list(nullptr)
+    GarbageCollector(bool debug = false, bool log_stats = false) : debug_(debug), log_stats_(log_stats)
     {
+        thread_ = std::thread(&GarbageCollector::run, this);
     }
+
     ~GarbageCollector()
     {
-        stop();
+        stop_ = true;
+        if (thread_.joinable())
+        {
+            thread_.join();
+        }
     }
 
-    void start()
+    void add(GCObjectBase *ptr)
     {
-        if (running)
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (ptr)
+        {
+            objects_[ptr] = false;
+        }
+    }
+
+    void add_to_root_set(GCObjectBase *ptr)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        root_set_.insert(ptr);
+    }
+
+    void remove_from_root_set(GCObjectBase *ptr)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        root_set_.erase(ptr);
+    }
+
+    void collect()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (debug_)
+        {
+            std::cout << "Starting garbage collection\n";
+        }
+        auto start_time = std::chrono::steady_clock::now();
+
+        // mark phase
+        for (GCObjectBase *ptr : root_set_)
+        {
+            mark(ptr);
+        }
+
+        std::vector<GCObjectBase *> garbage;
+        for (auto &kv : objects_)
+        {
+            if (!kv.second)
+            {
+                garbage.push_back(kv.first);
+            }
+            else
+            {
+                kv.second = false;
+            }
+        }
+
+        for (auto ptr : garbage)
+        {
+            delete ptr;
+            objects_.erase(ptr);
+        }
+        if (debug_)
+        {
+            std::cout << "Garbage collection completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() << " ms\n";
+        }
+
+        if (log_stats_)
+        {
+            std::cout << "Live objects: " << objects_.size() << std::endl;
+            std::cout << "Collected objects: " << garbage.size() << std::endl;
+        }
+    }
+
+private:
+    void run()
+    {
+        while (!stop_)
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            collect();
+        }
+    }
+
+    void mark(GCObjectBase *ptr)
+    {
+        if (!ptr)
         {
             return;
         }
-        running = true;
-        std::thread collector_thread([this]()
-                                     {
-        while (running) 
+        auto it = objects_.find(ptr);
+        if (it != objects_.end() && !it->second)
         {
-            collect_garbage();
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-        } });
-        collector_thread.detach();
-    }
-
-    void stop()
-    {
-        running = false;
-    }
-
-    void *allocate(size_t size)
-    {
-        void *memory = std::malloc(size);
-        if (!memory)
-        {
-            throw std::bad_alloc();
-        }
-        MemoryBlock *block = new MemoryBlock{memory, size, memory_blocks};
-        memory_blocks = block;
-        ObjectHeader *header = static_cast<ObjectHeader *>(memory);
-        header->marked = false;
-        header->size = size;
-        header->next = object_list;
-        object_list = header;
-        return static_cast<void *>(static_cast<char *>(memory) + sizeof(ObjectHeader));
-    }
-
-    template <typename U, typename... Args>
-    U *allocate(Args &&...args)
-    {
-        void *memory = allocate(sizeof(U));
-        return new (memory) U(std::forward<Args>(args)...);
-    }
-
-    void add_root(T *root)
-    {
-        std::lock_guard<std::mutex> lock(roots_mutex);
-        roots.push_back(root);
-    }
-
-    void remove_root(T *root)
-    {
-        std::lock_guard<std::mutex> lock(roots_mutex);
-        auto it = std::find(roots.begin(), roots.end(), root);
-        if (it != roots.end())
-        {
-            roots.erase(it);
+            it->second = true;
         }
     }
-
-    void collect_garbage()
-    {
-        std::cout << "Ovde 1" << std::endl;
-        scan_roots();
-        std::cout << "Ovde 2" << std::endl;
-        scan_objects();
-        std::cout << "Ovde 3" << std::endl;
-        sweep_objects(*this);
-        std::cout << "Ovde 4" << std::endl;
-    }
+    std::unordered_set<GCObjectBase *> root_set_;
+    std::mutex mutex_;
+    std::unordered_map<GCObjectBase *, bool> objects_;
+    std::thread thread_;
+    bool stop_ = false;
+    bool debug_;
+    bool log_stats_;
 };
 #endif // GARBAGE_COLLECTOR_HPP
