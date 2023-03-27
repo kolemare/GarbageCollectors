@@ -25,22 +25,43 @@ class GCObjectBase
 public:
     virtual ~GCObjectBase() {}
     virtual void update_ptr(void *new_ptr) = 0;
+    virtual void add_child(GCObjectBase *child) = 0;
+    virtual const std::vector<GCObjectBase *> &get_children() const = 0;
+    virtual void destroy() = 0;
+    virtual GarbageCollector &gc() const = 0; // Add this line
 };
 
 template <typename T>
 class GCObject : public GCObjectBase
 {
 public:
-    GCObject(T *ptr, GarbageCollector &gc) : ptr_(ptr), gc_(gc) {}
-    GCObject(const GCObject &other) = delete;
+    GCObject(T *ptr, GarbageCollector &gc) : ptr_(ptr), gc_(gc)
+    {
+        gc_.add(this);
+    }
+    GCObject(const GCObject &other) : ptr_(other.ptr_), gc_(other.gc_)
+    {
+        gc_.add(this);
+    }
+
+    GarbageCollector &gc() const override
+    {
+        return gc_;
+    }
+
     GCObject &operator=(const GCObject &other) = delete;
     ~GCObject()
     {
-        gc_.add(this);
+        gc_.remove(this);
     }
     T *get() const
     {
         return ptr_;
+    }
+
+    void destroy() override
+    {
+        delete ptr_;
     }
 
     void update_ptr(void *new_ptr) override
@@ -48,9 +69,20 @@ public:
         ptr_ = static_cast<T *>(new_ptr);
     }
 
+    void add_child(GCObjectBase *child) override
+    {
+        children_.push_back(child);
+    }
+
+    const std::vector<GCObjectBase *> &get_children() const override
+    {
+        return children_;
+    }
+
 private:
     T *ptr_;
     GarbageCollector &gc_;
+    std::vector<GCObjectBase *> children_;
 };
 
 class GarbageCollector
@@ -77,6 +109,12 @@ public:
         {
             objects_[ptr] = false;
         }
+    }
+
+    void remove(GCObjectBase *ptr)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        objects_.erase(ptr);
     }
 
     void add_to_root_set(GCObjectBase *ptr)
@@ -119,9 +157,9 @@ public:
             }
         }
 
-        for (auto ptr : garbage)
+        for (auto &ptr : garbage)
         {
-            std::free(ptr);
+            ptr->destroy();
             objects_.erase(ptr);
         }
         if (debug_)
@@ -156,6 +194,10 @@ private:
         if (it != objects_.end() && !it->second)
         {
             it->second = true;
+            for (GCObjectBase *child : ptr->get_children())
+            {
+                mark(child);
+            }
         }
     }
     std::unordered_set<GCObjectBase *> root_set_;

@@ -5,14 +5,11 @@
 class MyClass
 {
 public:
-    MyClass()
-    {
-        std::cout << "MyClass constructor called" << std::endl;
-    }
-    ~MyClass()
-    {
-        std::cout << "MyClass destructor called" << std::endl;
-    }
+    MyClass(int value) : value_(value) {}
+    int get_value() const { return value_; }
+
+private:
+    int value_;
 };
 
 class TestObject

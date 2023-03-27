@@ -9,7 +9,14 @@ public:
     GCPtr<T> create(Args &&...args)
     {
         T *obj = new T(std::forward<Args>(args)...);
-        return std::make_shared<GCObject<T>>(obj, gc_);
+        std::allocator<GCObject<T>> allocator;
+        return std::allocate_shared<GCObject<T>>(allocator, obj, gc_);
+    }
+
+    template <typename T>
+    void add_child(GCPtr<T> parent, GCPtr<T> child)
+    {
+        parent->add_child(child.get());
     }
 
 private:
