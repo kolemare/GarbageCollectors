@@ -13,8 +13,8 @@ public:
         return std::allocate_shared<GCObject<T>>(allocator, obj, gc_);
     }
 
-    template <typename T>
-    void add_child(GCPtr<T> parent, GCPtr<T> child)
+    template <typename ParentT, typename ChildT>
+    void add_child(GCPtr<ParentT> parent, GCPtr<ChildT> child)
     {
         parent->add_child(child.get());
     }

@@ -12,6 +12,26 @@ private:
     int value_;
 };
 
+class AnotherClass
+{
+public:
+    AnotherClass(const std::string &name) : name_(name) {}
+    std::string get_name() const { return name_; }
+
+private:
+    std::string name_;
+};
+
+class ThirdClass
+{
+public:
+    ThirdClass(double data) : data_(data) {}
+    double get_data() const { return data_; }
+
+private:
+    double data_;
+};
+
 class TestObject
 {
 public:
