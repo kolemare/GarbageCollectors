@@ -19,6 +19,12 @@ public:
         parent->add_child(child.get());
     }
 
+    template <typename ParentT, typename ChildT>
+    void remove_child(GCPtr<ParentT> parent, GCPtr<ChildT> child)
+    {
+        parent->remove_child(child.get());
+    }
+
 private:
     GarbageCollector &gc_;
 };

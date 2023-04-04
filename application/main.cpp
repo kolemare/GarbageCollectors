@@ -46,6 +46,10 @@ int main()
         std::cout << "Sleeping after parent was set to be root!" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(3));
 
+        factory.remove_child(parent, child3);
+        std::cout << "Sleeping after child3 was removed as a child of parent!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+
         std::cout << "Sleeping after parent was removed from root!" << std::endl;
         gc.remove_from_root_set(parent.get());
 

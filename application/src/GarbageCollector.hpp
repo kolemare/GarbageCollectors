@@ -26,6 +26,7 @@ public:
     virtual ~GCObjectBase() {}
     virtual void update_ptr(void *new_ptr) = 0;
     virtual void add_child(GCObjectBase *child) = 0;
+    virtual void remove_child(GCObjectBase *child) = 0;
     virtual const std::vector<GCObjectBase *> &get_children() const = 0;
     virtual void destroy() = 0;
     virtual GarbageCollector &gc() const = 0; // Add this line
@@ -72,6 +73,15 @@ public:
     void add_child(GCObjectBase *child) override
     {
         children_.push_back(child);
+    }
+
+    void remove_child(GCObjectBase *child) override
+    {
+        auto it = std::find(children_.begin(), children_.end(), child);
+        if (it != children_.end())
+        {
+            children_.erase(it);
+        }
     }
 
     const std::vector<GCObjectBase *> &get_children() const override
