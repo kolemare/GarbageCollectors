@@ -124,7 +124,11 @@ public:
     void remove(GCObjectBase *ptr)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        objects_.erase(ptr);
+        auto it = objects_.find(ptr);
+        if (it != objects_.end())
+        {
+            objects_.erase(it);
+        }
     }
 
     void add_to_root_set(GCObjectBase *ptr)
@@ -136,7 +140,16 @@ public:
     void remove_from_root_set(GCObjectBase *ptr)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        root_set_.erase(ptr);
+        auto it = root_set_.find(ptr);
+        if (it != root_set_.end())
+        {
+            root_set_.erase(it);
+        }
+    }
+
+    const std::unordered_set<GCObjectBase *> &get_root_set() const
+    {
+        return root_set_;
     }
 
     void collect()

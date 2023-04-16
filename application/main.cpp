@@ -10,51 +10,59 @@ int main()
     GCFactory factory(gc);
 
     {
-        // Create objects
-        GCPtr<MyClass> parent = factory.create<MyClass>(999);
+        GCWrapObject<MyClass> parent(factory, 999);
+        GCWrapObject<MyClass> child1(factory, 1000);
+        GCWrapObject<AnotherClass> child2(factory, "World");
+        GCWrapObject<ThirdClass> child3(factory, 2.71);
+        GCWrapObject<AnotherClass> child4(factory, "Universe");
 
-        GCPtr<MyClass> child1 = factory.create<MyClass>(1000);
-        GCPtr<AnotherClass> child2 = factory.create<AnotherClass>("World");
-        GCPtr<ThirdClass> child3 = factory.create<ThirdClass>(2.71);
-        GCPtr<AnotherClass> child4 = factory.create<AnotherClass>("Universe");
+        GCWrapObject<MyClass> grandchild1(factory, 1001);
+        GCWrapObject<ThirdClass> grandchild2(factory, 1.61);
+        GCWrapObject<AnotherClass> grandchild3(factory, "Milky Way");
+        GCWrapObject<ThirdClass> grandchild4(factory, 0.618);
 
-        GCPtr<MyClass> grandchild1 = factory.create<MyClass>(1001);
-        GCPtr<ThirdClass> grandchild2 = factory.create<ThirdClass>(1.61);
-        GCPtr<AnotherClass> grandchild3 = factory.create<AnotherClass>("Milky Way");
-        GCPtr<ThirdClass> grandchild4 = factory.create<ThirdClass>(0.618);
+        GCWrapObject<MyClass> great_grandchild1(factory, 1002);
+        GCWrapObject<AnotherClass> great_grandchild2(factory, "Solar System");
 
-        GCPtr<MyClass> great_grandchild1 = factory.create<MyClass>(1002);
-        GCPtr<AnotherClass> great_grandchild2 = factory.create<AnotherClass>("Solar System");
+        // Array
+        GCWrapObject<int> int_array(factory, static_cast<std::size_t>(10));
 
-        // Build tree
-        factory.add_child(parent, child1);
-        factory.add_child(parent, child2);
-        factory.add_child(parent, child3);
-        factory.add_child(parent, child4);
+        // 2D Array
+        // GCWrapObject<int **> int_2d_array(factory, 3, 4);
 
-        factory.add_child(child1, grandchild1);
-        factory.add_child(child1, grandchild2);
-        factory.add_child(child3, grandchild3);
-        factory.add_child(child3, grandchild4);
+        // Map
+        GCWrapObject<std::map<int, std::string>> int_str_map(factory);
 
-        factory.add_child(grandchild1, great_grandchild1);
-        factory.add_child(grandchild1, great_grandchild2);
+        // Vector
+        GCWrapObject<std::vector<int>> int_vector(factory);
 
-        // Add parent to root set
-        gc.add_to_root_set(parent.get());
+        parent.add_child(child1);
+        parent.add_child(child2);
+        parent.add_child(child3);
+        parent.add_child(child4);
+
+        child1.add_child(grandchild1);
+        child1.add_child(grandchild2);
+        child3.add_child(grandchild3);
+        child3.add_child(grandchild4);
+
+        grandchild1.add_child(great_grandchild1);
+        grandchild1.add_child(great_grandchild2);
+
+        grandchild3.add_child(int_array);
+        // grandchild3.add_child(int_2d_array);
+        grandchild3.add_child(int_str_map);
+        grandchild3.add_child(int_vector);
 
         std::cout << "Sleeping after parent was set to be root!" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(3));
 
-        factory.remove_child(parent, child3);
+        parent.remove_child(child3);
         std::cout << "Sleeping after child3 was removed as a child of parent!" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(3));
-
-        std::cout << "Sleeping after parent was removed from root!" << std::endl;
-        gc.remove_from_root_set(parent.get());
-
-        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     return 0;
 }
 
