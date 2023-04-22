@@ -13,8 +13,8 @@ class GCWrapObject
 public:
     // Template Specialization for array types
     template <typename U = T>
-    GCWrapObject(GCFactory &factory, size_t size)
-        : gc_obj(factory.create_raw<U>(size))
+    GCWrapObject(GCFactory &factory, std::enable_if_t<std::is_fundamental<U>::value, int> size)
+        : gc_obj(factory.create_raw<U>((size_t)size))
     {
         gc_obj->gc().add_to_root_set(gc_obj.get());
     }
@@ -51,14 +51,6 @@ public:
         gc_obj->gc().add_to_root_set(gc_obj.get());
     }
 
-    // Template Specialization for multidimensional arrays (2D)
-    template <typename U = T>
-    GCWrapObject(GCFactory &factory, std::enable_if_t<std::is_pointer_v<U> && std::is_pointer_v<typename std::remove_pointer<U>::type>, size_t> rows, size_t cols)
-        : gc_obj(factory.create_multi_array<typename std::remove_pointer<typename std::remove_pointer<U>::type>::type>(rows, cols))
-    {
-        gc_obj->gc().add_to_root_set(gc_obj.get());
-    }
-
     ~GCWrapObject()
     {
         gc_obj->gc().remove_from_root_set(gc_obj.get());
@@ -76,12 +68,12 @@ public:
     template <typename ChildT>
     void add_child(GCWrapObject<ChildT> &child)
     {
-        gc_obj->add_child(child.get_gc_obj().get());
         GarbageCollector &gc = gc_obj->gc();
         if (is_reachable_from_other_root(gc.get_root_set(), child.get_gc_obj().get()))
         {
-            gc.remove_from_root_set(gc_obj.get());
+            gc.remove_from_root_set(child.get_gc_obj().get());
         }
+        gc_obj->add_child(child.get_gc_obj().get());
     }
 
     template <typename ChildT>
@@ -93,6 +85,11 @@ public:
     GCPtr<T> &get_gc_obj()
     {
         return gc_obj;
+    }
+
+    T &get_object()
+    {
+        return *gc_obj->get();
     }
 
 private:
