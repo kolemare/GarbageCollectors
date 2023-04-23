@@ -1,4 +1,6 @@
 // GCVisualizer.hpp
+#define WINDOWS
+
 #ifndef GC_VISUALIZER_HPP
 #define GC_VISUALIZER_HPP
 
@@ -8,6 +10,8 @@
 #include <cgraph/cgraph.h>
 #include <string>
 #include <unordered_map>
+
+#ifdef WINDOWS
 
 class GCVisualizer : public GCObserver
 {
@@ -70,5 +74,74 @@ private:
         }
     }
 };
+
+#else
+
+class GCVisualizer : public GCObserver
+{
+public:
+    GCVisualizer(GarbageCollector &gc) : gc_(gc)
+    {
+        gc_.registerObserver(this);
+    }
+
+    ~GCVisualizer()
+    {
+        gc_.unregisterObserver(this);
+    }
+
+    void onUpdate() override
+    {
+        draw();
+    }
+
+    void draw()
+    {
+        std::ofstream dotfile("gc_visualizer.dot");
+        dotfile << "digraph GCVisualizer {\n";
+
+        std::unordered_map<GCObjectBase *, std::string> nodes;
+        for (GCObjectBase *root : gc_.get_root_set())
+        {
+            drawNodes(dotfile, root, nodes);
+        }
+
+        dotfile << "}\n";
+        dotfile.close();
+
+        const char *dot = "dot";
+        const char *format = "png";
+        const char *inputFilename = "gc_visualizer.dot";
+        const char *outputFilename = "gc_visualizer.png";
+
+        char cmd[1024];
+        snprintf(cmd, sizeof(cmd), "%s -T%s %s -o %s", dot, format, inputFilename, outputFilename);
+        system(cmd);
+    }
+
+private:
+    GarbageCollector &gc_;
+
+    void drawNodes(std::ofstream &dotfile, GCObjectBase *node, std::unordered_map<GCObjectBase *, std::string> &nodes)
+    {
+        if (nodes.find(node) == nodes.end())
+        {
+            std::string label = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node));
+            nodes[node] = label;
+            dotfile << "  " << label << " [label=\"" << label << "\"];\n";
+        }
+
+        for (GCObjectBase *child : node->get_children())
+        {
+            if (nodes.find(child) == nodes.end())
+            {
+                drawNodes(dotfile, child, nodes);
+            }
+            dotfile << "  " << nodes[node] << " -> " << nodes[child] << ";\n";
+        }
+    }
+};
+
+#endif // WINDOWS
 
 #endif // GC_VISUALIZER_HPP
