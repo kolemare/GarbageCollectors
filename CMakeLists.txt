@@ -6,7 +6,6 @@ project(GarbageCollector)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(GRAPHVIZ_SKIP_CPACK ON CACHE BOOL "Skip CPack configuration in Graphviz submodule")
 
 # Enable testing
 enable_testing()
@@ -21,6 +20,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/application/bin)
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/application/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/application/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/application/include/graphviz/lib) # Include Graphviz submodule headers
 
 # Add source files for the application
 set(APP_SOURCES
@@ -31,6 +31,9 @@ set(APP_SOURCES
 # Add executable for the application
 add_executable(application ${APP_SOURCES})
 
+# Link the Google Test library and Graphviz libraries to the application
+target_link_libraries(application gvplugin_core gvplugin_dot_layout gvplugin_neato_layout cgraph gvc)
+
 # Add source files for tests
 set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/testGarbageCollector.cpp
@@ -40,8 +43,8 @@ set(TEST_SOURCES
 # Add executable for tests
 add_executable(tests ${TEST_SOURCES})
 
-# Link the Google Test library to the tests
-target_link_libraries(tests gtest gtest_main)
+# Link the Google Test library and Graphviz libraries to the tests
+target_link_libraries(tests gtest gtest_main gvplugin_core gvplugin_dot_layout gvplugin_neato_layout cgraph gvc)
 
 # Set output directory for tests executable
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)

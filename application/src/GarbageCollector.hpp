@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstring>
 #include <unordered_set>
+#include <GCObserver.hpp>
 
 class GarbageCollector;
 class GCObjectBase;
@@ -73,6 +74,7 @@ public:
     void add_child(GCObjectBase *child) override
     {
         children_.push_back(child);
+        gc_.notifyObservers();
     }
 
     void remove_child(GCObjectBase *child) override
@@ -82,6 +84,7 @@ public:
         {
             children_.erase(it);
         }
+        gc_.notifyObservers();
     }
 
     const std::vector<GCObjectBase *> &get_children() const override
@@ -112,6 +115,28 @@ public:
         }
     }
 
+    void registerObserver(GCObserver *observer)
+    {
+        observers_.push_back(observer);
+    }
+
+    void unregisterObserver(GCObserver *observer)
+    {
+        auto it = std::find(observers_.begin(), observers_.end(), observer);
+        if (it != observers_.end())
+        {
+            observers_.erase(it);
+        }
+    }
+
+    void notifyObservers()
+    {
+        for (GCObserver *observer : observers_)
+        {
+            observer->onUpdate();
+        }
+    }
+
     void add(GCObjectBase *ptr)
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -135,6 +160,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(mutex_);
         root_set_.insert(ptr);
+        notifyObservers();
     }
 
     void remove_from_root_set(GCObjectBase *ptr)
@@ -145,6 +171,7 @@ public:
         {
             root_set_.erase(it);
         }
+        notifyObservers();
     }
 
     const std::unordered_set<GCObjectBase *> &get_root_set() const
@@ -223,6 +250,7 @@ private:
             }
         }
     }
+
     std::unordered_set<GCObjectBase *> root_set_;
     std::mutex mutex_;
     std::unordered_map<GCObjectBase *, bool> objects_;
@@ -230,5 +258,6 @@ private:
     bool stop_ = false;
     bool debug_;
     bool log_stats_;
+    std::vector<GCObserver *> observers_;
 };
 #endif // GARBAGE_COLLECTOR_HPP

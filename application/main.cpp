@@ -3,11 +3,15 @@
 #include "include/models.hpp"
 #include "src/GCWrapObject.hpp"
 #include <iostream>
+#include "src/GCVisualizer.hpp"
 
 int main()
 {
     GarbageCollector gc(true, true); // Enable debugging and log statistics
     GCFactory factory(gc);
+
+    GCVisualizer visualizer(gc);      // Create an instance of GCVisualizer
+    gc.registerObserver(&visualizer); // Register visualizer as an observer
 
     GCWrapObject<MyClass> parent(factory, 999);
     GCWrapObject<MyClass> child1(factory, 1000);
