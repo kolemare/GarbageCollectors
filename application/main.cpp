@@ -37,21 +37,34 @@ int main()
     GCWrapObject<std::vector<int ***>> int_vector(factory);
 
     parent.add_child(child1);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     parent.add_child(child2);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     parent.add_child(child3);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     parent.add_child(child4);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
 
     child1.add_child(grandchild1);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     child1.add_child(grandchild2);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     child3.add_child(grandchild3);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     child3.add_child(grandchild4);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
 
     grandchild1.add_child(great_grandchild1);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     grandchild1.add_child(great_grandchild2);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
 
     grandchild3.add_child(int_array);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     grandchild3.add_child(int_str_map);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     grandchild3.add_child(int_vector);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
 
     std::cout << "Sleeping after parent was set to be root!" << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(3));

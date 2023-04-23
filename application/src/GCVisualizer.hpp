@@ -10,6 +10,7 @@
 #include <cgraph/cgraph.h>
 #include <string>
 #include <unordered_map>
+#include "GCInvokeDisplaySingleton.hpp"
 
 #ifdef WINDOWS
 
@@ -18,6 +19,7 @@ class GCVisualizer : public GCObserver
 public:
     GCVisualizer(GarbageCollector &gc) : gc_(gc)
     {
+        GCInvokeDisplaySingleton::getInstance();
         gc_.registerObserver(this);
     }
 

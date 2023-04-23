@@ -8,6 +8,8 @@ setlocal EnableDelayedExpansion
 set file=GCVisualizer.hpp
 set define=WINDOWS
 
+copy %file% temp.hpp
+
 set found=false
 (for /F "tokens=*" %%a in (%file%) do (
     set line=%%a
@@ -15,7 +17,7 @@ set found=false
     echo !line!
 )) > temp.txt
 
-if not %found% (
+if "!found!"=="false" (
     echo #define %define%> temp2.txt
     type temp2.txt temp.txt > %file%
     del temp2.txt
@@ -66,21 +68,23 @@ cd %BUILD_DIR%
 cmake ..
 make
 
-REM Revert the changes to GCVisualizer.hpp
-set found=false
-(for /F "tokens=*" %%a in (%file%) do (
-    set line=%%a
-    if "!line!"=="#define %define%" set found=true
-    echo !line!
-)) > temp.txt
+cd ..
 
-if %found% (
-    (for /F "tokens=*" %%a in (%file%) do (
-        set line=%%a
-        if not "!line!"=="#define %define%" echo !line!
-    )) > temp2.txt
-    move /Y temp2.txt %file%
-)
+cd application
+cd src
+
+REM Revert the changes to GCVisualizer.hpp
+copy /Y temp.hpp %file%
+del temp.hpp
 
 cd ..
+cd ..
+
+rem Navigate to the application directory
+cd application
+
+rem Copy the GCDisplay.py file from the src directory to the bin directory
+copy src\GCDisplay.py bin\
+
+rem Navigate back to the root directory
 cd ..
