@@ -6,8 +6,13 @@ cd src
 file="GCVisualizer.hpp"
 define="WINDOWS"
 
-# Create a backup of GCVisualizer.hpp
-cp "$file" temp.hpp
+file2="GCInvokeDisplaySingleton.hpp"
+search_str='py GCDisplay.py &'
+replace_str='python3 GCDisplay.py &'
+
+# Create backups of GCVisualizer.hpp and GCInvokeDisplaySingleton.hpp
+cp "$file" GCVisualizerTEMP.hpp
+cp "$file2" GCInvokeDisplaySingletonTEMP.hpp
 
 found=false
 while IFS= read -r line; do
@@ -25,6 +30,16 @@ if ! $found; then
 else
     mv temp.txt "$file"
 fi
+
+while IFS= read -r line; do
+    if echo "$line" | grep -q "$search_str"; then
+        echo "${line/$search_str/$replace_str}"
+    else
+        echo "$line"
+    fi
+done < "$file2" > temp2.txt
+
+mv temp2.txt "$file2"
 
 cd ../..
 
@@ -74,9 +89,11 @@ cd ..
 cd application
 cd src
 
-# Revert the changes to GCVisualizer.hpp
-cp -f temp.hpp "$file"
-rm temp.hpp
+# Revert the changes to GCVisualizer.hpp and GCInvokeDisplaySingleton.hpp
+cp -f GCVisualizerTEMP.hpp "$file"
+cp -f GCInvokeDisplaySingletonTEMP.hpp "$file2"
+rm GCVisualizerTEMP.hpp
+rm GCInvokeDisplaySingletonTEMP.hpp
 
 cd ../..
 

@@ -7,8 +7,12 @@ setlocal EnableDelayedExpansion
 
 set file=GCVisualizer.hpp
 set define=WINDOWS
+set file2=GCInvokeDisplaySingleton.hpp
+set search_str=python3 GCDisplay.py ^^^&
+set replace_str=py GCDisplay.py ^^^&
 
-copy %file% temp.hpp
+copy %file% GCVisualizerTEMP.hpp
+copy %file2% GCInvokeDisplaySingletonTEMP.hpp
 
 set found=false
 (for /F "tokens=*" %%a in (%file%) do (
@@ -24,6 +28,17 @@ if "!found!"=="false" (
 ) else (
     move /Y temp.txt %file%
 )
+
+(for /F "tokens=*" %%a in (%file2%) do (
+    set line=%%a
+    echo !line! | findstr /C:"%search_str%" >nul
+    if !errorlevel! == 0 (
+        set "line=!line:%search_str%=%replace_str%!"
+    )
+    echo !line!
+)) > temp2.txt
+
+move /Y temp2.txt %file2%
 
 cd ..
 cd ..
@@ -73,9 +88,11 @@ cd ..
 cd application
 cd src
 
-REM Revert the changes to GCVisualizer.hpp
-copy /Y temp.hpp %file%
-del temp.hpp
+REM Revert the changes to GCVisualizer.hpp and GCInvokeDisplaySingleton.hpp
+copy /Y GCVisualizerTEMP.hpp %file%
+copy /Y GCInvokeDisplaySingletonTEMP.hpp %file2%
+del GCVisualizerTEMP.hpp
+del GCInvokeDisplaySingletonTEMP.hpp
 
 cd ..
 cd ..

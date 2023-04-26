@@ -11,6 +11,10 @@
 #include <string>
 #include <unordered_map>
 #include "GCInvokeDisplaySingleton.hpp"
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <cstdlib>
 
 #ifdef WINDOWS
 
@@ -84,6 +88,7 @@ class GCVisualizer : public GCObserver
 public:
     GCVisualizer(GarbageCollector &gc) : gc_(gc)
     {
+        GCInvokeDisplaySingleton::getInstance();
         gc_.registerObserver(this);
     }
 
@@ -99,47 +104,45 @@ public:
 
     void draw()
     {
-        std::ofstream dotfile("gc_visualizer.dot");
-        dotfile << "digraph GCVisualizer {\n";
+        std::ofstream dotFile("gc_visualizer.dot");
+        dotFile << "digraph GCVisualizer {" << std::endl;
 
         std::unordered_map<GCObjectBase *, std::string> nodes;
         for (GCObjectBase *root : gc_.get_root_set())
         {
-            drawNodes(dotfile, root, nodes);
+            drawNodes(dotFile, root, nodes);
         }
 
-        dotfile << "}\n";
-        dotfile.close();
+        dotFile << "}" << std::endl;
+        dotFile.close();
 
-        const char *dot = "dot";
-        const char *format = "png";
-        const char *inputFilename = "gc_visualizer.dot";
-        const char *outputFilename = "gc_visualizer.png";
-
-        char cmd[1024];
-        snprintf(cmd, sizeof(cmd), "%s -T%s %s -o %s", dot, format, inputFilename, outputFilename);
-        system(cmd);
+        const char *command = "dot -Tpng gc_visualizer.dot -o gc_visualizer.png";
+        int result = system(command);
+        if (result != 0)
+        {
+            std::cerr << "Failed to execute Graphviz command" << std::endl;
+        }
     }
 
 private:
     GarbageCollector &gc_;
 
-    void drawNodes(std::ofstream &dotfile, GCObjectBase *node, std::unordered_map<GCObjectBase *, std::string> &nodes)
+    void drawNodes(std::ofstream &dotFile, GCObjectBase *node, std::unordered_map<GCObjectBase *, std::string> &nodes)
     {
         if (nodes.find(node) == nodes.end())
         {
             std::string label = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node));
             nodes[node] = label;
-            dotfile << "  " << label << " [label=\"" << label << "\"];\n";
+            dotFile << label << "[label=\"" << label << "\"];" << std::endl;
         }
 
         for (GCObjectBase *child : node->get_children())
         {
             if (nodes.find(child) == nodes.end())
             {
-                drawNodes(dotfile, child, nodes);
+                drawNodes(dotFile, child, nodes);
             }
-            dotfile << "  " << nodes[node] << " -> " << nodes[child] << ";\n";
+            dotFile << nodes[node] << " -> " << nodes[child] << ";" << std::endl;
         }
     }
 };
