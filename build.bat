@@ -8,8 +8,8 @@ setlocal EnableDelayedExpansion
 set file=GCVisualizer.hpp
 set define=WINDOWS
 set file2=GCInvokeDisplaySingleton.hpp
-set search_str=python3 GCDisplay.py ^^^&
-set replace_str=py GCDisplay.py ^^^&
+set search_str=python3 GCDisplay.py
+set replace_str=py GCDisplay.py
 
 copy %file% GCVisualizerTEMP.hpp
 copy %file2% GCInvokeDisplaySingletonTEMP.hpp
@@ -21,6 +21,7 @@ set found=false
     echo !line!
 )) > temp.txt
 
+REM Conditional block for found variable
 if "!found!"=="false" (
     echo #define %define%> temp2.txt
     type temp2.txt temp.txt > %file%
@@ -29,6 +30,7 @@ if "!found!"=="false" (
     move /Y temp.txt %file%
 )
 
+REM Replacing search_str with replace_str
 (for /F "tokens=*" %%a in (%file2%) do (
     set line=%%a
     echo !line! | findstr /C:"%search_str%" >nul
@@ -49,12 +51,12 @@ set CLEAN_FLAG=0
 
 cd application
 
-if "%~1" == "--clean" (
+if "%1" == "--clean" (
   set CLEAN_FLAG=1
 )
 
+REM Cleaning now
 if %CLEAN_FLAG% == 1 (
-  REM Cleaning now...
   if exist %BIN_DIR% (
     rd /s /q %BIN_DIR%
   )
@@ -65,7 +67,7 @@ if %CLEAN_FLAG% == 1 (
     rd /s /q %BUILD_DIR%
   )
 
-  REM Building now...
+  REM Building now
   cd application
 )
 
@@ -97,11 +99,11 @@ del GCInvokeDisplaySingletonTEMP.hpp
 cd ..
 cd ..
 
-rem Navigate to the application directory
+REM Navigate to the application directory
 cd application
 
-rem Copy the GCDisplay.py file from the src directory to the bin directory
+REM Copy the GCDisplay.py file from the src directory to the bin directory
 copy src\GCDisplay.py bin\
 
-rem Navigate back to the root directory
+REM Navigate back to the root directory
 cd ..
