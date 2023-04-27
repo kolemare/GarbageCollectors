@@ -336,7 +336,7 @@ private:
 };
 
 std::unordered_map<std::string, std::string> GCVisualizer::nodeColors;
-std::vectorstd::string GCVisualizer::availableColors = GCVisualizer::generateColors(100);
+std::vector<std::string> GCVisualizer::availableColors = GCVisualizer::generateColors(100);
 
 #endif // WINDOWS
 
