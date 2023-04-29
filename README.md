@@ -109,9 +109,11 @@ Install OpenCV with command: `pip install opencv-python`
 | `sudo apt-get install libpango1.0-dev` | A library for layout and rendering of text, with an emphasis on i18n (PANGOCAIRO). |
 | `sudo apt-get install pkg-config` | A helper tool for managing library compile and link flags (PkgConfig). |
 | `sudo apt-get install libxkbcommon-dev` | XKB API common to servers and clients (required version >= 0.5.0).   |
+| `sudo apt-get install python3` | Python for Linux.   |
+| `sudo apt-get install python3-opencv` | OpenCV library for python.   |
 
 Single command to install everything:  
-`sudo apt-get install cmake make build-essential bison flex qtbase5-dev libann-dev libcairo2-dev libexpat1-dev libgts-dev libltdl-dev zlib1g-dev libgd-dev libdevil-dev ghostscript libgtk2.0-dev libfreetype6-dev libpango1.0-dev pkg-config libxkbcommon-dev`
+`sudo apt-get install cmake make build-essential bison flex qtbase5-dev libann-dev libcairo2-dev libexpat1-dev libgts-dev libltdl-dev zlib1g-dev libgd-dev libdevil-dev ghostscript libgtk2.0-dev libfreetype6-dev libpango1.0-dev pkg-config libxkbcommon-dev python3 python3-opencv`
 
 
 ### Repository structure
