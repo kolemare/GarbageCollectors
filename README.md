@@ -109,11 +109,13 @@ Install OpenCV with command: `pip install opencv-python`
 | `sudo apt-get install libpango1.0-dev` | A library for layout and rendering of text, with an emphasis on i18n (PANGOCAIRO). |
 | `sudo apt-get install pkg-config` | A helper tool for managing library compile and link flags (PkgConfig). |
 | `sudo apt-get install libxkbcommon-dev` | XKB API common to servers and clients (required version >= 0.5.0).   |
+| `sudo apt-get install graphviz` | Graphviz is an open-source graph visualization software used to represent structured information as diagrams of abstract graphs and networks.   |
 | `sudo apt-get install python3` | Python for Linux.   |
 | `sudo apt-get install python3-opencv` | OpenCV library for python.   |
 
+
 Single command to install everything:  
-`sudo apt-get install cmake make build-essential bison flex qtbase5-dev libann-dev libcairo2-dev libexpat1-dev libgts-dev libltdl-dev zlib1g-dev libgd-dev libdevil-dev ghostscript libgtk2.0-dev libfreetype6-dev libpango1.0-dev pkg-config libxkbcommon-dev python3 python3-opencv`
+`sudo apt-get install cmake make build-essential bison flex qtbase5-dev libann-dev libcairo2-dev libexpat1-dev libgts-dev libltdl-dev zlib1g-dev libgd-dev libdevil-dev ghostscript libgtk2.0-dev libfreetype6-dev libpango1.0-dev pkg-config libxkbcommon-dev graphviz python3 python3-opencv`
 
 
 ### Repository structure
@@ -171,7 +173,7 @@ This project uses 2 submodules graphviz and googletest so they need to be cloned
 | GCFactory.hpp                   | This header file contains the definition for dynamic allocation of various types, classes and fundamental types.                            |
 | GCInvokeDisplaySingleton.hpp    | This header file contains the definition of the `GCInvokeDisplaySingleton` class, which responsibility is when called run the python script. Singleton design pattern is used here to make sure python script won't be run multiple times.  |
 | GCObserver.hpp                  | This header file contains the definition of the `GCObserver` class, which is a base class for `GCVisualizer`                         |
-| GCVisualizer.hpp                | This header file contains the definition of the `GCVisualizer` class, which is responsible for visualizing the garbage collector's current state. Generating the `gc_visualizer.png` based on GarbageCollector's current root set. Observer design patter was used here.                                         |
+| GCVisualizer.hpp                | This header file contains the definition of the `GCVisualizer` class, which is responsible for visualizing the garbage collector's current state. Generating the `gc_visualizer.png` based on GarbageCollector's current root set. Observer design patter was used here. Windows build uses internal methods of graphviz to create png, while linux uses command line to create png which requires graphviz to be installed.                                        |
 | GCWrapObject.hpp                | This header file contains the definition of the `GCWrapObject` class, which is responsible for wrapping objects to be managed by the garbage collector. It also makes use of managing references by implementing add_child and remove_child methods.                              |
 | main.cpp                        | This file contains the main entry point of the application. Here setup can be created for Garbage Collector to work with.                                            |
 | models.hpp                      | This header file contains the definitions of user defined classes.     |
