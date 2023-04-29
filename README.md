@@ -88,6 +88,28 @@ Install OpenCV with command: `pip install opencv-python`
 
 #### Linux prereqs
 
+| Command                      | Description                                                             |
+|------------------------------|-------------------------------------------------------------------------|
+| `sudo apt-get install cmake make` | Installs cmake and make, used for build system generation and program building. |
+| `sudo apt-get install build-essential` | Installs essential build tools, including gcc, g++, and others. |
+| `sudo apt-get install bison` | A parser generator that's compatible with Yacc.                         |
+| `sudo apt-get install flex` | A fast lexical analyzer generator.                                      |
+| `sudo apt-get install qtbase5-dev` | Qt 5 base development files.                                           |
+| `sudo apt-get install libann-dev` | Approximate Nearest Neighbor (ANN) library development files.          |
+| `sudo apt-get install libcairo2-dev` | A 2D graphics library with support for multiple output devices (Cairo). |
+| `sudo apt-get install libexpat1-dev` | A stream-oriented XML parser library (Expat).                          |
+| `sudo apt-get install libgts-dev` | GNU Triangulated Surface library development files (GTS).              |
+| `sudo apt-get install libltdl-dev` | A system independent dlopen wrapper for GNU libtool (LTDL).           |
+| `sudo apt-get install zlib1g-dev` | A general-purpose lossless data-compression library (Zlib).            |
+| `sudo apt-get install libgd-dev` | A graphics drawing library for creating PNG, JPEG, and other images (GD). |
+| `sudo apt-get install libdevil-dev` | A full-featured cross-platform image loading and manipulation library (DevIL). |
+| `sudo apt-get install ghostscript` | An interpreter for the PostScript language and for PDF (GS).          |
+| `sudo apt-get install libgtk2.0-dev` | Development files for the GTK+2 graphical user interface library.     |
+| `sudo apt-get install libfreetype6-dev` | A library for rendering text with TrueType, OpenType, and other font formats (Freetype). |
+| `sudo apt-get install libpango1.0-dev` | A library for layout and rendering of text, with an emphasis on i18n (PANGOCAIRO). |
+| `sudo apt-get install pkg-config` | A helper tool for managing library compile and link flags (PkgConfig). |
+| `sudo apt-get install libxkbcommon-dev` | XKB API common to servers and clients (required version >= 0.5.0).   |
+
 
 ### Repository structure
 
