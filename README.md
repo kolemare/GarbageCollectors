@@ -110,6 +110,9 @@ Install OpenCV with command: `pip install opencv-python`
 | `sudo apt-get install pkg-config` | A helper tool for managing library compile and link flags (PkgConfig). |
 | `sudo apt-get install libxkbcommon-dev` | XKB API common to servers and clients (required version >= 0.5.0).   |
 
+Single command to install everything:  
+`sudo apt-get install cmake make build-essential bison flex qtbase5-dev libann-dev libcairo2-dev libexpat1-dev libgts-dev libltdl-dev zlib1g-dev libgd-dev libdevil-dev ghostscript libgtk2.0-dev libfreetype6-dev libpango1.0-dev pkg-config libxkbcommon-dev`
+
 
 ### Repository structure
 
