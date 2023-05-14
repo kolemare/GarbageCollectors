@@ -19,14 +19,6 @@ public:
         gc_obj->gc().add_to_root_set(gc_obj.get());
     }
 
-    // General template for all types of classes
-    template <typename... Args>
-    GCWrapObject(GCFactory &factory, Args &&...args)
-        : gc_obj(factory.create<T>(std::forward<Args>(args)...))
-    {
-        gc_obj->gc().add_to_root_set(gc_obj.get());
-    }
-
     // Template Specialization for std::vector
     template <typename U = T>
     GCWrapObject(GCFactory &factory, std::enable_if_t<std::is_same_v<U, std::vector<typename U::value_type>>, size_t> size)
@@ -51,7 +43,15 @@ public:
         gc_obj->gc().add_to_root_set(gc_obj.get());
     }
 
-    ~GCWrapObject()
+    // General template for all types of classes
+    template <typename... Args>
+    GCWrapObject(GCFactory &factory, Args &&...args)
+        : gc_obj(factory.create<T>(std::forward<Args>(args)...))
+    {
+        gc_obj->gc().add_to_root_set(gc_obj.get());
+    }
+
+        ~GCWrapObject()
     {
         gc_obj->gc().remove_from_root_set(gc_obj.get());
     }
