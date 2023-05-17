@@ -51,7 +51,7 @@ public:
         gc_obj->gc().add_to_root_set(gc_obj.get());
     }
 
-        ~GCWrapObject()
+    ~GCWrapObject()
     {
         gc_obj->gc().remove_from_root_set(gc_obj.get());
     }
@@ -74,12 +74,14 @@ public:
             gc.remove_from_root_set(child.get_gc_obj().get());
         }
         gc_obj->add_child(child.get_gc_obj().get());
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     template <typename ChildT>
     void remove_child(GCWrapObject<ChildT> &child)
     {
         gc_obj->remove_child(child.get_gc_obj().get());
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     GCPtr<T> &get_gc_obj()

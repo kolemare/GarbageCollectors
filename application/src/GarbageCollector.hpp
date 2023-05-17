@@ -172,6 +172,7 @@ public:
             root_set_.erase(it);
         }
         notifyObservers();
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     const std::unordered_set<GCObjectBase *> &get_root_set() const
