@@ -11,6 +11,7 @@
 #include <cstring>
 #include <unordered_set>
 #include <GCObserver.hpp>
+#include <MemoryManagement.hpp>
 
 class GarbageCollector;
 class GCObjectBase;
@@ -37,11 +38,13 @@ template <typename T>
 class GCObject : public GCObjectBase
 {
 public:
-    GCObject(T *ptr, GarbageCollector &gc) : ptr_(ptr), gc_(gc)
+    GCObject(T *ptr, GarbageCollector &gc)
+        : ptr_(ptr), gc_(gc)
     {
         gc_.add(this);
     }
-    GCObject(const GCObject &other) : ptr_(other.ptr_), gc_(other.gc_)
+    GCObject(const GCObject &other)
+        : ptr_(other.ptr_), gc_(other.gc_)
     {
         gc_.add(this);
     }
@@ -63,7 +66,7 @@ public:
 
     void destroy() override
     {
-        delete ptr_;
+        MemoryManagement::getInstance().deallocate(ptr_);
     }
 
     void update_ptr(void *new_ptr) override
@@ -101,7 +104,8 @@ private:
 class GarbageCollector
 {
 public:
-    GarbageCollector(bool debug = false, bool log_stats = false) : debug_(debug), log_stats_(log_stats)
+    GarbageCollector(bool debug = false, bool log_stats = false)
+        : debug_(debug), log_stats_(log_stats)
     {
         thread_ = std::thread(&GarbageCollector::run, this);
     }
@@ -213,6 +217,9 @@ public:
             ptr->destroy();
             objects_.erase(ptr);
         }
+
+        MemoryManagement::getInstance().compact();
+
         if (debug_)
         {
             std::cout << "Garbage collection completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() << " ms\n";

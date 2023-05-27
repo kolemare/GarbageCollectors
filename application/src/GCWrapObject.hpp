@@ -2,6 +2,7 @@
 #define GC_WRAP_OBJECT_HPP
 
 #include "GCFactory.hpp"
+#include "MemoryManagement.hpp"
 #include <type_traits>
 #include <vector>
 #include <list>
@@ -17,6 +18,7 @@ public:
         : gc_obj(factory.create_raw<U>((size_t)size))
     {
         gc_obj->gc().add_to_root_set(gc_obj.get());
+        MemoryManagement::getInstance().registerPointer(gc_obj.get(), gc_obj->get());
     }
 
     // Template Specialization for std::vector
@@ -25,6 +27,7 @@ public:
         : gc_obj(factory.create<U>(size))
     {
         gc_obj->gc().add_to_root_set(gc_obj.get());
+        MemoryManagement::getInstance().registerPointer(gc_obj.get(), gc_obj->get());
     }
 
     // Template Specialization for std::list
@@ -33,6 +36,7 @@ public:
         : gc_obj(factory.create<U>(size))
     {
         gc_obj->gc().add_to_root_set(gc_obj.get());
+        MemoryManagement::getInstance().registerPointer(gc_obj.get(), gc_obj->get());
     }
 
     // Template Specialization for std::map
@@ -41,6 +45,7 @@ public:
         : gc_obj(factory.create<U>())
     {
         gc_obj->gc().add_to_root_set(gc_obj.get());
+        MemoryManagement::getInstance().registerPointer(gc_obj.get(), gc_obj->get());
     }
 
     // General template for all types of classes
@@ -49,6 +54,7 @@ public:
         : gc_obj(factory.create<T>(std::forward<Args>(args)...))
     {
         gc_obj->gc().add_to_root_set(gc_obj.get());
+        MemoryManagement::getInstance().registerPointer(gc_obj.get(), gc_obj->get());
     }
 
     ~GCWrapObject()

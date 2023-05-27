@@ -26,6 +26,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/application/include/graphviz/lib
 set(APP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/application/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/application/src/GarbageCollector.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/application/src/MemoryManagement.cpp
 )
 
 # Add executable for the application
@@ -38,6 +39,7 @@ target_link_libraries(application gvplugin_core gvplugin_dot_layout gvplugin_nea
 set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/testGarbageCollector.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/application/src/GarbageCollector.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/application/src/MemoryManagement.cpp
 )
 
 # Add executable for tests

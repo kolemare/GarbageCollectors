@@ -12,7 +12,7 @@ public:
     GCPtr<T> create(Args &&...args)
     {
         // The object is allocated on the heap using MemoryManagement::allocate
-        T *obj = reinterpret_cast<T *>(MemoryManagement::allocate(sizeof(T)));
+        T *obj = reinterpret_cast<T *>(MemoryManagement::getInstance().allocate(sizeof(T)));
         // The object is then constructed in-place using the new (placement new) operator
         new (obj) T(std::forward<Args>(args)...);
 
@@ -24,7 +24,9 @@ public:
     GCPtr<T> create_raw(size_t size)
     {
         // The array is allocated on the heap using MemoryManagement::allocate
-        T *obj = reinterpret_cast<T *>(MemoryManagement::allocate(sizeof(T) * size));
+        T *obj = reinterpret_cast<T *>(MemoryManagement::getInstance().allocate(sizeof(T) * size));
+        // The object is then constructed in-place using the new (placement new) operator
+        new (obj) T[size];
 
         std::allocator<GCObject<T>> allocator;
         return std::allocate_shared<GCObject<T>>(allocator, obj, gc_);
