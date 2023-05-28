@@ -71,13 +71,14 @@ public:
 
     void update_ptr(void *new_ptr) override
     {
+        std::cout << "Old address: " << ptr_ << std::endl;
+        std::cout << "New address: " << new_ptr << std::endl;
         ptr_ = static_cast<T *>(new_ptr);
     }
 
     void add_child(GCObjectBase *child) override
     {
         children_.push_back(child);
-        gc_.notifyObservers();
     }
 
     void remove_child(GCObjectBase *child) override
@@ -87,7 +88,6 @@ public:
         {
             children_.erase(it);
         }
-        gc_.notifyObservers();
     }
 
     const std::vector<GCObjectBase *> &get_children() const override
@@ -164,7 +164,6 @@ public:
     {
         std::lock_guard<std::mutex> lock(mutex_);
         root_set_.insert(ptr);
-        notifyObservers();
     }
 
     void remove_from_root_set(GCObjectBase *ptr)
@@ -175,8 +174,6 @@ public:
         {
             root_set_.erase(it);
         }
-        notifyObservers();
-        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     const std::unordered_set<GCObjectBase *> &get_root_set() const
@@ -191,6 +188,11 @@ public:
         {
             std::cout << "Starting garbage collection\n";
         }
+        if (!stop_)
+        {
+            notifyObservers();
+        }
+
         auto start_time = std::chrono::steady_clock::now();
 
         // mark phase

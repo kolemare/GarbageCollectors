@@ -4,19 +4,23 @@ import os
 
 
 class ImageWindow:
-    def __init__(self, image_path, update_interval):
-        self.image_path = image_path
+    def __init__(self, image_paths, update_interval):
+        self.gc_image_path = image_paths[0]
+        self.heap_image_path = image_paths[1]
         self.update_interval = update_interval
 
         self.update_image()
 
     def update_image(self):
         while True:
-            if os.path.exists(self.image_path):
-                # Read the image and display it
+            if os.path.exists(self.gc_image_path) and os.path.exists(self.heap_image_path):
+                # Read the images and display them
                 try:
-                    image = cv2.imread(self.image_path)
-                    cv2.imshow("Image Viewer", image)
+                    gc_image = cv2.imread(self.gc_image_path)
+                    heap_image = cv2.imread(self.heap_image_path)
+
+                    cv2.imshow("GC Image Viewer", gc_image)
+                    cv2.imshow("Heap Image Viewer", heap_image)
 
                     # Wait for a key press or the update interval to pass
                     key = cv2.waitKey(self.update_interval)
@@ -24,17 +28,20 @@ class ImageWindow:
                         break
                 except:
                     pass
-                    # Sleep for the update interval
+
+            # Sleep for the update interval
             time.sleep(self.update_interval / 1000)
 
         cv2.destroyAllWindows()
 
 
 def main():
-    image_path = "gc_visualizer.png"
+    gc_image_path = "gc_visualizer.png"
+    heap_image_path = "heap.png"
+    image_paths = [gc_image_path, heap_image_path]
     update_interval = 50  # in milliseconds
 
-    app = ImageWindow(image_path, update_interval)
+    app = ImageWindow(image_paths, update_interval)
 
 
 if __name__ == "__main__":

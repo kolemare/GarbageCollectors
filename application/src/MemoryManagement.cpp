@@ -17,7 +17,7 @@ void *MemoryManagement::allocate(std::size_t size)
 
     void *allocated = freePointer_;
     freePointer_ += size;
-    allocatedBlocks_.push_back({allocated, size});
+    blocks_.push_back({allocated, size, true});
 
     return allocated;
 }
@@ -25,11 +25,11 @@ void *MemoryManagement::allocate(std::size_t size)
 void MemoryManagement::deallocate(void *ptr)
 {
     std::lock_guard<std::mutex> lock(mtx_);
-    for (auto it = allocatedBlocks_.begin(); it != allocatedBlocks_.end();)
+    for (auto &block : blocks_)
     {
-        if (it->first == ptr)
+        if (block.address == ptr)
         {
-            freeBlocks_.push_back(*it);
+            block.isAllocated = false;
 
             // Find and unregister the pointers
             auto iter = std::find_if(pointerRegistry_.begin(), pointerRegistry_.end(),
@@ -40,54 +40,56 @@ void MemoryManagement::deallocate(void *ptr)
             {
                 pointerRegistry_.erase(iter);
             }
-
-            it = allocatedBlocks_.erase(it);
             return;
         }
-        else
-        {
-            ++it;
-        }
     }
-    throw std::invalid_argument("Pointer not found in allocated blocks");
+    throw std::invalid_argument("Pointer not found in blocks");
 }
 
 void MemoryManagement::reset()
 {
     std::lock_guard<std::mutex> lock(mtx_);
-    allocatedBlocks_.clear();
-    freeBlocks_.clear();
+    blocks_.clear();
     freePointer_ = heap_;
 }
 
 void MemoryManagement::compact()
 {
     std::lock_guard<std::mutex> lock(mtx_);
-    std::sort(allocatedBlocks_.begin(), allocatedBlocks_.end(), [](const auto &a, const auto &b)
-              { return a.first < b.first; });
+    std::sort(blocks_.begin(), blocks_.end(), [](const Block &a, const Block &b)
+              { return a.address < b.address; });
 
     char *compactionPointer = heap_;
-    for (auto &block : allocatedBlocks_)
+    for (auto &block : blocks_)
     {
-        if (block.first != compactionPointer)
+        if (block.isAllocated && block.address != compactionPointer)
         {
-            std::memmove(compactionPointer, block.first, block.second);
+            std::memmove(compactionPointer, block.address, block.size);
 
             for (auto &entry : pointerRegistry_)
             {
-                if (entry.second == block.first)
+                if (entry.second == block.address)
                 {
                     entry.second = compactionPointer;
                     entry.first->update_ptr(compactionPointer);
                 }
             }
 
-            block.first = compactionPointer;
+            block.address = compactionPointer;
         }
-        compactionPointer += block.second;
+        if (block.isAllocated)
+            compactionPointer += block.size;
     }
+
     freePointer_ = compactionPointer;
-    freeBlocks_.clear();
+
+    notifyObservers();
+
+    // remove all unallocated blocks
+    blocks_.erase(std::remove_if(blocks_.begin(), blocks_.end(),
+                                 [](const Block &block)
+                                 { return !block.isAllocated; }),
+                  blocks_.end());
 }
 
 void MemoryManagement::registerPointer(GCObjectBase *gcobj, void *ptr)
@@ -100,6 +102,48 @@ MemoryManagement::MemoryManagement()
     : heap_(new char[HEAP_SIZE]),
       freePointer_(heap_),
       heapEnd_(heap_ + HEAP_SIZE) {}
+
+void MemoryManagement::registerObserver(HeapObserver *observer)
+{
+    std::lock_guard<std::mutex> lock(mtx_);
+    observers_.push_back(observer);
+    std::cout << "Observer registered!" << std::endl;
+}
+
+void MemoryManagement::unregisterObserver(HeapObserver *observer)
+{
+    auto it = std::find(observers_.begin(), observers_.end(), observer);
+    if (it != observers_.end())
+    {
+        observers_.erase(it);
+    }
+}
+
+std::vector<Block> MemoryManagement::getBlocks() const
+{
+    return blocks_;
+}
+
+std::size_t MemoryManagement::getMaxBlockSize() const
+{
+    std::size_t maxBlockSize = 0;
+    for (const auto &block : blocks_)
+    {
+        if (block.size > maxBlockSize)
+        {
+            maxBlockSize = block.size;
+        }
+    }
+    return maxBlockSize;
+}
+
+void MemoryManagement::notifyObservers()
+{
+    for (HeapObserver *observer : observers_)
+    {
+        observer->onUpdate();
+    }
+}
 
 MemoryManagement::~MemoryManagement()
 {
