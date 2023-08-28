@@ -7,9 +7,14 @@ MemoryManagement &MemoryManagement::getInstance()
     return instance;
 }
 
+void MemoryManagement::setMutex(std::mutex *mutex)
+{
+    mtx_ = mutex;
+}
+
 void *MemoryManagement::allocate(std::size_t size)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::mutex> lock(*mtx_);
     if (freePointer_ + size > heapEnd_)
     {
         throw std::bad_alloc();
@@ -24,7 +29,6 @@ void *MemoryManagement::allocate(std::size_t size)
 
 void MemoryManagement::deallocate(void *ptr)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
     for (auto &block : blocks_)
     {
         if (block.address == ptr)
@@ -48,14 +52,13 @@ void MemoryManagement::deallocate(void *ptr)
 
 void MemoryManagement::reset()
 {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::mutex> lock(*mtx_);
     blocks_.clear();
     freePointer_ = heap_;
 }
 
 void MemoryManagement::compact()
 {
-    std::lock_guard<std::mutex> lock(mtx_);
     std::sort(blocks_.begin(), blocks_.end(), [](const Block &a, const Block &b)
               { return a.address < b.address; });
 
@@ -94,7 +97,7 @@ void MemoryManagement::compact()
 
 void MemoryManagement::registerPointer(GCObjectBase *gcobj, void *ptr)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::mutex> lock(*mtx_);
     pointerRegistry_[gcobj] = ptr;
 }
 
@@ -105,7 +108,7 @@ MemoryManagement::MemoryManagement()
 
 void MemoryManagement::registerObserver(HeapObserver *observer)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::mutex> lock(*mtx_);
     observers_.push_back(observer);
     std::cout << "Observer registered!" << std::endl;
 }

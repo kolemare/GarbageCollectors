@@ -107,6 +107,7 @@ public:
     GarbageCollector(bool debug = false, bool log_stats = false)
         : debug_(debug), log_stats_(log_stats)
     {
+        MemoryManagement::getInstance().setMutex(&mutex_);
         thread_ = std::thread(&GarbageCollector::run, this);
     }
 

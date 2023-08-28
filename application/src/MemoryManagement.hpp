@@ -39,6 +39,7 @@ public:
     void notifyObservers();
     std::size_t getMaxBlockSize() const;
     GCObjectBase *getAddressOfGCOBjectBase(void *address);
+    void setMutex(std::mutex *mutex);
 
 private:
     MemoryManagement();
@@ -50,7 +51,7 @@ private:
     std::vector<Block> blocks_;
     std::unordered_map<GCObjectBase *, void *> pointerRegistry_;
     std::vector<HeapObserver *> observers_;
-    mutable std::mutex mtx_;
+    std::mutex *mtx_;
 };
 
 #endif // MEMORYMANAGEMENT_HPP
