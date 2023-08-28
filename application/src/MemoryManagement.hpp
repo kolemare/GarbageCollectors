@@ -38,6 +38,7 @@ public:
     std::vector<Block> getBlocks() const;
     void notifyObservers();
     std::size_t getMaxBlockSize() const;
+    GCObjectBase *getAddressOfGCOBjectBase(void *address);
 
 private:
     MemoryManagement();

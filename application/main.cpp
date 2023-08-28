@@ -12,9 +12,8 @@ int main()
     GarbageCollector gc(true, true); // Enable debugging and log statistics
     GCFactory factory(gc);
 
-    GCVisualizer gcVisualizer(gc);      // Create an instance of GCVisualizer
-    HeapVisualizer heapVisualizer;      // Create and register HeapVisualizer
-    gc.registerObserver(&gcVisualizer); // Register visualizer as an observer
+    GCVisualizer gcVisualizer(gc); // Create an instance of GCVisualizer
+    HeapVisualizer heapVisualizer; // Create and register HeapVisualizer
 
     GCWrapObject<MyClass> parent(factory, 999);
     GCWrapObject<MyClass> child1(factory, 1000);

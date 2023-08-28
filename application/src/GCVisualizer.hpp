@@ -73,7 +73,7 @@ private:
     {
         if (nodes.find(node) == nodes.end())
         {
-            std::string label = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node));
+            std::string label = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node) % 1000);
             nodes[node] = agnode(graph, const_cast<char *>(label.c_str()), 1);
             std::string color = getColorForNode(label);
             agsafeset(nodes[node], const_cast<char *>("fillcolor"), const_cast<char *>(color.c_str()), const_cast<char *>("black"));

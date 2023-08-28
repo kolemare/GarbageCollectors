@@ -39,11 +39,25 @@ public:
         auto blocks = MemoryManagement::getInstance().getBlocks();
         auto maxBlockSize = MemoryManagement::getInstance().getMaxBlockSize();
 
+        if (maxBlockSizeVar < maxBlockSize)
+        {
+            maxBlockSizeVar = maxBlockSize;
+        }
+
         // Create a node for each block
         for (const auto &block : blocks)
         {
+            auto address = MemoryManagement::getInstance().getAddressOfGCOBjectBase(block.address);
+            Agnode_t *n = nullptr;
+            if (address)
+            {
+                n = agnode(g, const_cast<char *>(std::to_string(reinterpret_cast<uintptr_t>(address) % 1000).c_str()), TRUE);
+            }
+            else
+            {
+                n = agnode(g, const_cast<char *>(""), TRUE);
+            }
             // Block size could be included in the label
-            Agnode_t *n = agnode(g, const_cast<char *>(std::to_string(reinterpret_cast<uintptr_t>(block.address)).c_str()), TRUE);
 
             // Set fillcolor and style
             agsafeset(n, "fillcolor", block.isAllocated ? "green" : "white", "");
@@ -53,7 +67,7 @@ public:
             agsafeset(n, "shape", "box", "");
 
             // Set width and height
-            std::string width = std::to_string(static_cast<double>(block.size) / maxBlockSize);
+            std::string width = std::to_string(static_cast<double>(block.size) / maxBlockSizeVar * 3);
             agsafeset(n, "width", const_cast<char *>(width.c_str()), "");
             agsafeset(n, "height", "1", ""); // height is fixed at 1
         }
@@ -71,6 +85,7 @@ public:
 
 private:
     GVC_t *gvc = gvContext(); // Initialize a new Graphviz context
+    static inline double maxBlockSizeVar = 0;
 };
 
 #endif // HEAPVISUALIZER_HPP

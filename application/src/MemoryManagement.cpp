@@ -119,6 +119,18 @@ void MemoryManagement::unregisterObserver(HeapObserver *observer)
     }
 }
 
+GCObjectBase *MemoryManagement::getAddressOfGCOBjectBase(void *address)
+{
+    for (auto &pair : pointerRegistry_)
+    {
+        if (pair.second == address)
+        {
+            return pair.first;
+        }
+    }
+    return nullptr;
+}
+
 std::vector<Block> MemoryManagement::getBlocks() const
 {
     return blocks_;

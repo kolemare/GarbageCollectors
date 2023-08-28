@@ -188,10 +188,6 @@ public:
         {
             std::cout << "Starting garbage collection\n";
         }
-        if (!stop_)
-        {
-            notifyObservers();
-        }
 
         auto start_time = std::chrono::steady_clock::now();
 
@@ -220,6 +216,7 @@ public:
             objects_.erase(ptr);
         }
 
+        notifyObservers();
         MemoryManagement::getInstance().compact();
 
         if (debug_)
