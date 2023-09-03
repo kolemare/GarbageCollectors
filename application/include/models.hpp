@@ -35,11 +35,12 @@ private:
 class TestObject
 {
 public:
-    TestObject(int a, int b) : a(a), b(b) {}
+    TestObject(int a, int b, int c) : a(a), b(b), c(c) {}
 
     int add() { return a + b; }
 
 private:
     int a;
     int b;
+    int c;
 };

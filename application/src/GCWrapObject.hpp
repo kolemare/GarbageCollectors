@@ -80,14 +80,13 @@ public:
             gc.remove_from_root_set(child.get_gc_obj().get());
         }
         gc_obj->add_child(child.get_gc_obj().get());
-        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     template <typename ChildT>
     void remove_child(GCWrapObject<ChildT> &child)
     {
+        std::this_thread::sleep_for(std::chrono::seconds(10));
         gc_obj->remove_child(child.get_gc_obj().get());
-        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     GCPtr<T> &get_gc_obj()
@@ -102,6 +101,7 @@ public:
 
 private:
     GCPtr<T> gc_obj;
+    std::vector<GCObjectBase *> processed;
 
     bool is_reachable_from_other_root(const std::unordered_set<GCObjectBase *> &root_set, GCObjectBase *target)
     {
@@ -113,9 +113,11 @@ private:
             }
             if (is_reachable(root, target))
             {
+                processed.clear();
                 return true;
             }
         }
+        processed.clear();
         return false;
     }
 
@@ -125,8 +127,13 @@ private:
         {
             return true;
         }
+        if (std::find(processed.begin(), processed.end(), current) != processed.end())
+        {
+            return false;
+        }
         for (auto child : current->get_children())
         {
+            processed.push_back(current);
             if (is_reachable(child, target))
             {
                 return true;

@@ -59,6 +59,7 @@ void MemoryManagement::reset()
 
 void MemoryManagement::compact()
 {
+    notifyObservers();
     std::sort(blocks_.begin(), blocks_.end(), [](const Block &a, const Block &b)
               { return a.address < b.address; });
 
@@ -85,8 +86,6 @@ void MemoryManagement::compact()
     }
 
     freePointer_ = compactionPointer;
-
-    notifyObservers();
 
     // remove all unallocated blocks
     blocks_.erase(std::remove_if(blocks_.begin(), blocks_.end(),

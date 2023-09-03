@@ -44,30 +44,34 @@ public:
             maxBlockSizeVar = maxBlockSize;
         }
 
+        int freeBlockCount = 1;
         // Create a node for each block
         for (const auto &block : blocks)
         {
             auto address = MemoryManagement::getInstance().getAddressOfGCOBjectBase(block.address);
             Agnode_t *n = nullptr;
-            if (address)
+            if (block.isAllocated)
             {
                 n = agnode(g, const_cast<char *>(std::to_string(reinterpret_cast<uintptr_t>(address) % 1000).c_str()), TRUE);
+                agsafeset(n, "fillcolor", "green", "");
             }
             else
             {
-                n = agnode(g, const_cast<char *>(""), TRUE);
+                n = agnode(g, const_cast<char *>(("F" + std::to_string(freeBlockCount)).c_str()), TRUE);
+                agsafeset(n, "fillcolor", "white", "");
+                ++freeBlockCount;
             }
             // Block size could be included in the label
 
             // Set fillcolor and style
-            agsafeset(n, "fillcolor", block.isAllocated ? "green" : "white", "");
+
             agsafeset(n, "style", "filled", "");
 
             // Set shape to square
             agsafeset(n, "shape", "box", "");
 
             // Set width and height
-            std::string width = std::to_string(static_cast<double>(block.size) / maxBlockSizeVar * 3);
+            std::string width = std::to_string(static_cast<double>(block.size) / maxBlockSizeVar);
             agsafeset(n, "width", const_cast<char *>(width.c_str()), "");
             agsafeset(n, "height", "1", ""); // height is fixed at 1
         }

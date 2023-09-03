@@ -52,6 +52,13 @@ public:
         {
             drawNodes(graph, root, nodes);
         }
+        for (const auto &edge : edgeVector)
+        {
+            edge();
+        }
+
+        edgeVector.clear();
+        completedNodes.clear();
 
         const char *layout = "dot";
         const char *format = "png";
@@ -68,6 +75,8 @@ private:
     GarbageCollector &gc_;
     static std::unordered_map<std::string, std::string> nodeColors;
     static std::vector<std::string> availableColors;
+    static std::vector<std::function<Agedge_t *()>> edgeVector;
+    static std::vector<Agnode_t *> completedNodes;
 
     void drawNodes(Agraph_t *graph, GCObjectBase *node, std::unordered_map<GCObjectBase *, Agnode_t *> &nodes)
     {
@@ -80,13 +89,22 @@ private:
             agsafeset(nodes[node], const_cast<char *>("style"), const_cast<char *>("filled"), const_cast<char *>(""));
         }
 
-        for (GCObjectBase *child : node->get_children())
+        if (std::find(completedNodes.begin(), completedNodes.end(), nodes[node]) == completedNodes.end())
         {
-            if (nodes.find(child) == nodes.end())
+            completedNodes.push_back(nodes[node]);
+            for (GCObjectBase *child : node->get_children())
             {
-                drawNodes(graph, child, nodes);
+                if (nodes.find(child) == nodes.end())
+                {
+                    drawNodes(graph, child, nodes);
+                }
+
+                Agnode_t *tail = nodes[node];
+                Agnode_t *head = nodes[child];
+
+                edgeVector.push_back([=]()
+                                     { return agedge(graph, tail, head, nullptr, 1); });
             }
-            agedge(graph, nodes[node], nodes[child], nullptr, 1);
         }
     }
 
@@ -178,6 +196,8 @@ private:
 
 std::unordered_map<std::string, std::string> GCVisualizer::nodeColors;
 std::vector<std::string> GCVisualizer::availableColors = GCVisualizer::generateColors(100);
+std::vector<std::function<Agedge_t *()>> GCVisualizer::edgeVector;
+std::vector<Agnode_t *> GCVisualizer::completedNodes;
 
 #else
 
@@ -202,14 +222,20 @@ public:
 
     void draw()
     {
-        std::ofstream dotFile("gc_visualizer.dot");
         dotFile << "digraph GCVisualizer {" << std::endl;
 
         std::unordered_map<GCObjectBase *, std::string> nodes;
         for (GCObjectBase *root : gc_.get_root_set())
         {
-            drawNodes(dotFile, root, nodes);
+            drawNodes(root, nodes);
         }
+        for (const auto &edge : edgeVector)
+        {
+            edge();
+        }
+
+        edgeVector.clear();
+        completedNodes.clear();
 
         dotFile << "}" << std::endl;
         dotFile.close();
@@ -229,8 +255,11 @@ private:
     GarbageCollector &gc_;
     static std::unordered_map<std::string, std::string> nodeColors;
     static std::vector<std::string> availableColors;
+    static std::vector<std::function<void()>> edgeVector;
+    static std::vector<std::string> completedNodes;
+    static std::ofstream GCVisualizer::dotFile;
 
-    void drawNodes(std::ofstream &dotFile, GCObjectBase *node, std::unordered_map<GCObjectBase *, std::string> &nodes)
+    void drawNodes(GCObjectBase *node, std::unordered_map<GCObjectBase *, std::string> &nodes)
     {
         if (nodes.find(node) == nodes.end())
         {
@@ -240,13 +269,22 @@ private:
             dotFile << label << "[label=\"" << label << "\", fillcolor=\"" << color << "\", style=filled];" << std::endl;
         }
 
-        for (GCObjectBase *child : node->get_children())
+        if (std::find(completedNodes.begin(), completedNodes.end(), nodes[node]) == completedNodes.end())
         {
-            if (nodes.find(child) == nodes.end())
+            completedNodes.push_back(nodes[node]);
+            for (GCObjectBase *child : node->get_children())
             {
-                drawNodes(dotFile, child, nodes);
+                if (nodes.find(child) == nodes.end())
+                {
+                    drawNodes(child, nodes);
+                }
+
+                std::string tail = nodes[node];
+                std::string head = nodes[child];
+
+                edgeVector.push_back([=]()
+                                     { dotFile << tail << " -> " << head << ";" << std::endl; });
             }
-            dotFile << nodes[node] << " -> " << nodes[child] << ";" << std::endl;
         }
     }
 
@@ -337,6 +375,9 @@ private:
 
 std::unordered_map<std::string, std::string> GCVisualizer::nodeColors;
 std::vector<std::string> GCVisualizer::availableColors = GCVisualizer::generateColors(100);
+std::vector<std::function<void()>> GCVisualizer::edgeVector;
+std::vector<std::string> GCVisualizer::completedNodes;
+std::ofstream GCVisualizer::dotFile("gc_visualizer.dot");
 
 #endif // WINDOWS
 
