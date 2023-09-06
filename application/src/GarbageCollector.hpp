@@ -27,6 +27,7 @@ class GCObjectBase
 public:
     virtual ~GCObjectBase() {}
     virtual void update_ptr(void *new_ptr) = 0;
+    virtual void *get_ptr() = 0;
     virtual void add_child(GCObjectBase *child) = 0;
     virtual void remove_child(GCObjectBase *child) = 0;
     virtual const std::vector<GCObjectBase *> &get_children() const = 0;
@@ -74,6 +75,11 @@ public:
         std::cout << "Old address: " << ptr_ << std::endl;
         std::cout << "New address: " << new_ptr << std::endl;
         ptr_ = static_cast<T *>(new_ptr);
+    }
+
+    void *get_ptr() override
+    {
+        return static_cast<void *>(ptr_);
     }
 
     void add_child(GCObjectBase *child) override
