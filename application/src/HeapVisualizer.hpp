@@ -52,7 +52,7 @@ public:
             Agnode_t *n = nullptr;
             if (block.isAllocated)
             {
-                n = agnode(g, const_cast<char *>(std::to_string(reinterpret_cast<uintptr_t>(address) % 1000).c_str()), TRUE);
+                n = agnode(g, const_cast<char *>(std::to_string(reinterpret_cast<uintptr_t>(address->get_ptr()) % 1000).c_str()), TRUE);
                 agsafeset(n, "fillcolor", "green", "");
             }
             else

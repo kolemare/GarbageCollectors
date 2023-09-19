@@ -83,7 +83,8 @@ private:
         if (nodes.find(node) == nodes.end())
         {
             std::string label = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node) % 1000);
-            nodes[node] = agnode(graph, const_cast<char *>(label.c_str()), 1);
+            std::string nodeName = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node->get_ptr()) % 1000);
+            nodes[node] = agnode(graph, const_cast<char *>(nodeName.c_str()), 1);
             std::string color = getColorForNode(label);
             agsafeset(nodes[node], const_cast<char *>("fillcolor"), const_cast<char *>(color.c_str()), const_cast<char *>("black"));
             agsafeset(nodes[node], const_cast<char *>("style"), const_cast<char *>("filled"), const_cast<char *>(""));
@@ -264,9 +265,10 @@ private:
         if (nodes.find(node) == nodes.end())
         {
             std::string label = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node));
+            std::string nodeName = "Node_" + std::to_string(reinterpret_cast<uintptr_t>(node->get_ptr()) % 1000);
             nodes[node] = label;
             std::string color = getColorForNode(label);
-            dotFile << label << "[label=\"" << label << "\", fillcolor=\"" << color << "\", style=filled];" << std::endl;
+            dotFile << nodeName << "[label=\"" << nodeName << "\", fillcolor=\"" << color << "\", style=filled];" << std::endl;
         }
 
         if (std::find(completedNodes.begin(), completedNodes.end(), nodes[node]) == completedNodes.end())
