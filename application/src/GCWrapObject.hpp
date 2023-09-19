@@ -57,9 +57,11 @@ public:
         MemoryManagement::getInstance().registerPointer(gc_obj.get(), gc_obj->get());
     }
 
+    GCWrapObject() = default;
+
     ~GCWrapObject()
     {
-        gc_obj->gc().remove_from_root_set(gc_obj.get());
+        gc_obj->gc().remove_from_root_set(gc_obj.get(), true);
     }
 
     T *operator->()
@@ -74,18 +76,20 @@ public:
     template <typename ChildT>
     void add_child(GCWrapObject<ChildT> &child)
     {
+        std::lock_guard<std::mutex> lock(*MemoryManagement::getInstance().getMutex());
+        auto value = child.get_gc_obj().get();
         GarbageCollector &gc = gc_obj->gc();
-        if (is_reachable_from_other_root(gc.get_root_set(), child.get_gc_obj().get()))
+        if (is_reachable_from_other_root(gc.get_root_set(), value))
         {
-            gc.remove_from_root_set(child.get_gc_obj().get());
+            gc.remove_from_root_set(value, false);
         }
-        gc_obj->add_child(child.get_gc_obj().get());
+        gc_obj->add_child(value);
     }
 
     template <typename ChildT>
     void remove_child(GCWrapObject<ChildT> &child)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
         gc_obj->remove_child(child.get_gc_obj().get());
     }
 

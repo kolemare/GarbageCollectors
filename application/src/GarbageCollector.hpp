@@ -167,14 +167,31 @@ public:
         root_set_.insert(ptr);
     }
 
-    void remove_from_root_set(GCObjectBase *ptr)
+    void remove_from_root_set(GCObjectBase *ptr, bool lock)
+    {
+        if (lock)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto it = root_set_.find(ptr);
+            if (it != root_set_.end())
+            {
+                root_set_.erase(it);
+            }
+        }
+        else
+        {
+            auto it = root_set_.find(ptr);
+            if (it != root_set_.end())
+            {
+                root_set_.erase(it);
+            }
+        }
+    }
+
+    void empty_root_set()
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        auto it = root_set_.find(ptr);
-        if (it != root_set_.end())
-        {
-            root_set_.erase(it);
-        }
+        root_set_.clear();
     }
 
     const std::unordered_set<GCObjectBase *> &get_root_set() const

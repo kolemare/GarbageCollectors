@@ -6,15 +6,126 @@
 #include "src/GCVisualizer.hpp"
 #include "src/HeapVisualizer.hpp"
 #include "src/MemoryManagement.hpp"
+#include <set>
+
+#define maxObjects 17
+#define minObjects 15
 
 void simulation1();
 void simulation2();
+void randomSimulation();
 
 int main()
 {
-    // simulation1();
-    simulation2();
+    // simulation2();
+    randomSimulation();
     return 0;
+}
+
+void randomSimulation()
+{
+    GarbageCollector gc(true, true); // Enable debugging and log statistics
+    GCFactory factory(gc);
+    GCVisualizer gcVisualizer(gc); // Create an instance of GCVisualizer
+    HeapVisualizer heapVisualizer; // Create and register HeapVisualizer
+
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> distribution(minObjects, maxObjects);
+    const int numberOfObjects = distribution(rng);
+    std::uniform_int_distribution<int> distributionIndex(0, numberOfObjects - 1);
+    GCWrapObject<MyClass> *objects[maxObjects];
+    std::vector<std::vector<std::tuple<int, int>>> matrix(numberOfObjects,
+                                                          std::vector<std::tuple<int, int>>(numberOfObjects));
+    std::vector<std::tuple<int, int>> connectionsToRemove;
+    std::set<int> selectedNumbers;
+
+    // Filling object connection matrix with all 0s
+    // Matrix of connections between objects represents how connections are established in graph
+    for (int i = 0; i < numberOfObjects; ++i)
+    {
+        for (int j = 0; j < numberOfObjects; ++j)
+        {
+            matrix[i][j] = std::make_tuple(0, 0);
+        }
+    }
+
+    for (int i = 0; i < numberOfObjects; ++i)
+    {
+        objects[i] = new GCWrapObject<MyClass>(factory, distribution(rng));
+    }
+
+    for (int i = 0; i < numberOfObjects; ++i)
+    {
+        int firstRandomConnection = distributionIndex(rng);
+        matrix[i][firstRandomConnection] = std::make_tuple(1, 0);
+        connectionsToRemove.push_back(std::make_tuple(i, firstRandomConnection));
+        if (i == firstRandomConnection)
+        {
+            int secondRandomConnection = distributionIndex(rng);
+            while (secondRandomConnection == i)
+            {
+                secondRandomConnection = distributionIndex(rng);
+            }
+            matrix[i][secondRandomConnection] = std::make_tuple(1, 0);
+            connectionsToRemove.push_back(std::make_tuple(i, secondRandomConnection));
+        }
+    }
+
+    for (int i = 0; i < numberOfObjects; ++i)
+    {
+        int firstRandomConnection = distributionIndex(rng);
+
+        matrix[firstRandomConnection][i] = std::make_tuple(0, 1);
+        connectionsToRemove.push_back(std::make_tuple(firstRandomConnection, i));
+        if (i == firstRandomConnection)
+        {
+            int secondRandomConnection = distributionIndex(rng);
+            while (secondRandomConnection == i)
+            {
+                secondRandomConnection = distributionIndex(rng);
+            }
+            matrix[secondRandomConnection][i] = std::make_tuple(0, 1);
+            connectionsToRemove.push_back(std::make_tuple(secondRandomConnection, i));
+        }
+    }
+
+    for (int i = 5; i < numberOfObjects; ++i)
+    {
+        for (int j = 0; j < numberOfObjects; ++j)
+        {
+            if (std::get<0>(matrix[i][j]))
+            {
+                (*objects[i]).add_child(*objects[j]);
+            }
+            if (std::get<1>(matrix[i][j]))
+            {
+                (*objects[j]).add_child(*objects[i]);
+            }
+        }
+    }
+
+    while (connectionsToRemove.size() > 3)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            std::uniform_int_distribution<size_t> distribution(0, connectionsToRemove.size() - 1);
+            size_t randomIndex = distribution(rng);
+            std::tuple<int, int> element = connectionsToRemove[randomIndex];
+            std::tuple<int, int> element_Matrix = matrix[std::get<0>(element)][std::get<1>(element)];
+            if (1 == std::get<0>(element_Matrix))
+            {
+                (*objects[std::get<0>(element)]).remove_child(*objects[std::get<1>(element)]);
+            }
+            else if (1 == std::get<1>(element_Matrix))
+            {
+                (*objects[std::get<1>(element)]).remove_child(*objects[std::get<0>(element)]);
+            }
+            connectionsToRemove.erase(connectionsToRemove.begin() + randomIndex);
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+    gc.empty_root_set();
+    std::this_thread::sleep_for(std::chrono::seconds(3));
 }
 
 void simulation1()
@@ -82,7 +193,7 @@ void simulation1()
     parent.remove_child(child1);
     std::cout << "Sleeping after child1 was removed as a child of parent!" << std::endl;
 
-    gc.remove_from_root_set(parent.get_gc_obj().get());
+    gc.remove_from_root_set(parent.get_gc_obj().get(), true);
     std::cout << "Sleeping after parent was removed from root set!" << std::endl;
 }
 
@@ -158,7 +269,7 @@ void simulation2()
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     std::cout << "Sleeping after root_2 was removed from root set!" << std::endl;
-    gc.remove_from_root_set(root_2.get_gc_obj().get());
+    gc.remove_from_root_set(root_2.get_gc_obj().get(), true);
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     std::cout << "Sleeping after grandgrandchild_2 was removed as a child of grandchild_1!" << std::endl;
@@ -166,6 +277,6 @@ void simulation2()
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     std::cout << "Sleeping after root_1 was removed from root set!" << std::endl;
-    gc.remove_from_root_set(root_1.get_gc_obj().get());
+    gc.remove_from_root_set(root_1.get_gc_obj().get(), true);
     std::this_thread::sleep_for(std::chrono::seconds(3));
 }

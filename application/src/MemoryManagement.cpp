@@ -159,6 +159,11 @@ void MemoryManagement::notifyObservers()
     }
 }
 
+std::mutex *MemoryManagement::getMutex()
+{
+    return mtx_;
+}
+
 MemoryManagement::~MemoryManagement()
 {
     delete[] heap_;

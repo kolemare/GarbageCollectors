@@ -40,6 +40,7 @@ public:
     std::size_t getMaxBlockSize() const;
     GCObjectBase *getAddressOfGCOBjectBase(void *address);
     void setMutex(std::mutex *mutex);
+    std::mutex *getMutex();
 
 private:
     MemoryManagement();
